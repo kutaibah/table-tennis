@@ -18,7 +18,7 @@ type TournamentListItem = {
   startDate?: Date | null;
 };
 
-export default async function HomePage() {
+export default async function AdminTournamentsPage() {
   let list: TournamentListItem[] = [];
   let dbError: string | null = null;
 
@@ -37,13 +37,15 @@ export default async function HomePage() {
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Tournaments</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Admin — Tournaments
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Public brackets for knockout events.
+            Create draws and enter results.
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/tournaments/new">New tournament (admin)</Link>
+          <Link href="/admin/tournaments/new">New tournament</Link>
         </Button>
       </div>
 
@@ -55,9 +57,7 @@ export default async function HomePage() {
       ) : null}
 
       {!dbError && !list.length ? (
-        <p className="text-muted-foreground text-sm">
-          No tournaments yet. Create one in the admin area.
-        </p>
+        <p className="text-muted-foreground text-sm">No tournaments yet.</p>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -71,7 +71,7 @@ export default async function HomePage() {
               status: t.status as TournamentStatus,
               startDate: t.startDate ?? undefined,
             }}
-            href={`/tournaments/${String(t._id)}`}
+            href={`/admin/tournaments/${String(t._id)}`}
           />
         ))}
       </div>
