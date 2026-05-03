@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BracketView } from "@/components/tournament/BracketView";
 import { ChampionCard } from "@/components/tournament/ChampionCard";
 import { MatchesTable } from "@/components/tournament/MatchesTable";
+import { PublicPlayerRoster } from "@/components/tournament/PublicPlayerRoster";
 import { StatusBadge } from "@/components/tournament/StatusBadge";
 import { dbConnect } from "@/lib/db";
 import { loadTournamentBundle } from "@/lib/tournament/load";
@@ -17,8 +18,18 @@ export default async function PublicTournamentPage(props: {
   const bundle = await loadTournamentBundle(id);
   if (!bundle) notFound();
 
-  const { tournament, bracketMatches, playerMap, totalRounds, championName } =
+  const { tournament, players, bracketMatches, playerMap, totalRounds, championName } =
     bundle;
+
+  const preDraw =
+    tournament.status === "draft" || tournament.status === "players_added";
+
+  const publicPlayers = players.map((p) => ({
+    _id: String(p._id),
+    name: p.name,
+    nickname: p.nickname ?? undefined,
+    seed: p.seed ?? undefined,
+  }));
 
   const bestOf =
     typeof tournament.bestOf === "number" ? tournament.bestOf : 1;
@@ -68,6 +79,13 @@ export default async function PublicTournamentPage(props: {
 
       {tournament.status === "completed" && championName ? (
         <ChampionCard name={championName} />
+      ) : null}
+
+      {preDraw ? (
+        <PublicPlayerRoster
+          players={publicPlayers}
+          playerCount={tournament.playerCount as number}
+        />
       ) : null}
 
       <section className="space-y-4">
