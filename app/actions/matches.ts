@@ -39,5 +39,9 @@ export async function submitResultAction(
   revalidatePath(`/tournaments/${tid}`);
   revalidatePath("/admin/tournaments");
   revalidatePath("/");
-  return { success: "Result saved." };
+  return {
+    success: out.matchFinished
+      ? "Match complete — result saved."
+      : "Scores saved — match still in progress.",
+  };
 }

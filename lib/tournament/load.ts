@@ -1,4 +1,15 @@
 import type { PlayerMap } from "@/lib/tournament/bracketDisplay";
+import {
+  buildLiveFeedItems,
+  type MatchDocForFeed,
+} from "@/lib/tournament/liveFeed";
+import {
+  formatsByRoundRecord,
+  normalizeRoundFormats,
+  summarizeRoundFormats,
+  totalRoundsFromPlayerCount,
+  type RoundMatchFormat,
+} from "@/lib/tournament/matchFormat";
 import { toBracketMatches } from "@/lib/tournament/serializeBracket";
 import { dbConnect } from "@/lib/db";
 import MatchModel from "@/models/Match";
@@ -29,7 +40,7 @@ export async function loadTournamentBundle(id: string) {
       playerBScore: m.playerBScore,
       gameScores: m.gameScores as { a: number; b: number }[] | undefined,
       winnerPlayerId: m.winnerPlayerId,
-      status: m.status as "pending" | "completed",
+      status: m.status as "pending" | "live" | "completed",
     })),
   );
 
@@ -40,7 +51,23 @@ export async function loadTournamentBundle(id: string) {
     ]),
   );
 
-  const totalRounds = Math.log2(tournament.playerCount as number) || 1;
+  const totalRounds = totalRoundsFromPlayerCount(tournament.playerCount as number);
+
+  const roundFormats: RoundMatchFormat[] = normalizeRoundFormats({
+    playerCount: tournament.playerCount as number,
+    bestOf: tournament.bestOf,
+    winMarginThreshold: tournament.winMarginThreshold,
+    roundFormats: tournament.roundFormats as RoundMatchFormat[] | undefined,
+  });
+
+  const formatByRound = formatsByRoundRecord(roundFormats);
+  const formatsSummary = summarizeRoundFormats(roundFormats);
+
+  const liveFeed = buildLiveFeedItems(
+    matchDocs as MatchDocForFeed[],
+    playerMap,
+    totalRounds,
+  );
 
   const champion =
     tournament.championPlayerId != null
@@ -55,6 +82,10 @@ export async function loadTournamentBundle(id: string) {
     bracketMatches,
     playerMap,
     totalRounds,
+    roundFormats,
+    formatByRound,
+    formatsSummary,
+    liveFeed,
     championName:
       champion != null
         ? champion.nickname

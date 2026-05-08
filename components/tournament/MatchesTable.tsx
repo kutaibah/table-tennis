@@ -62,7 +62,7 @@ export function MatchesTable({
                 <td className="p-3">{b}</td>
                 <td className="font-mono p-3">
                   <div>{summary}</div>
-                  {m.gameScores != null && m.gameScores.length > 1 ? (
+                  {m.gameScores != null && m.gameScores.length > 0 ? (
                     <div className="text-muted-foreground mt-0.5 text-xs leading-snug">
                       {formatGameScoresLines(m.gameScores)}
                     </div>
@@ -72,13 +72,15 @@ export function MatchesTable({
                 <td className="p-3">
                   <span
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-xs font-medium",
+                      "rounded-md px-2 py-0.5 text-xs font-medium capitalize",
                       m.status === "completed"
                         ? "bg-green-500/15 text-green-800 dark:text-green-300"
-                        : "bg-muted text-muted-foreground",
+                        : m.status === "live"
+                          ? "bg-amber-500/15 text-amber-800 dark:text-amber-300"
+                          : "bg-muted text-muted-foreground",
                     )}
                   >
-                    {m.status}
+                    {m.status === "live" ? "live" : m.status}
                   </span>
                 </td>
               </tr>

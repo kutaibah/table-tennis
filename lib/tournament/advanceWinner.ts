@@ -5,10 +5,14 @@ import {
   parseGameScoresText,
   resolveScoresFromGameLines,
 } from "@/lib/tournament/gameLines";
+import {
+  getFormatForRound,
+  type RoundMatchFormat,
+} from "@/lib/tournament/matchFormat";
 import { resultSchema } from "@/lib/tournament/validations";
 
 export type AdvanceResult =
-  | { ok: true; tournamentId: string }
+  | { ok: true; tournamentId: string; matchFinished: boolean }
   | { ok: false; error: string };
 
 export async function advanceWinner(input: {
@@ -36,6 +40,10 @@ export async function advanceWinner(input: {
     return { ok: false, error: "This match is already completed." };
   }
 
+  if (match.status !== "pending" && match.status !== "live") {
+    return { ok: false, error: "This match cannot accept scores right now." };
+  }
+
   if (!match.playerAId || !match.playerBId) {
     return {
       ok: false,
@@ -53,16 +61,48 @@ export async function advanceWinner(input: {
     return { ok: false, error: linesParsed.error };
   }
 
+  const fmt = getFormatForRound(
+    {
+      playerCount: tournament.playerCount as number,
+      bestOf: tournament.bestOf,
+      winMarginThreshold: tournament.winMarginThreshold,
+      roundFormats: tournament.roundFormats as RoundMatchFormat[] | undefined,
+    },
+    match.round,
+  );
+
   const resolved = resolveScoresFromGameLines({
-    bestOf: tournament.bestOf ?? 1,
-    winMarginThreshold: tournament.winMarginThreshold ?? 1,
+    bestOf: fmt.bestOf,
+    winMarginThreshold: fmt.winMarginThreshold,
     games: linesParsed.games,
+    allowIncomplete: fmt.bestOf > 1,
   });
   if (!resolved.ok) {
     return { ok: false, error: resolved.error };
   }
 
-  const { playerAScore, playerBScore, gameScores } = resolved.scores;
+  const { matchComplete, scores } = resolved;
+  const { playerAScore, playerBScore, gameScores } = scores;
+
+  if (!matchComplete) {
+    match.playerAScore = playerAScore;
+    match.playerBScore = playerBScore;
+    match.set("gameScores", gameScores);
+    match.set("winnerPlayerId", null);
+    match.status = "live";
+    await match.save();
+
+    if (tournament.status === "drawn") {
+      tournament.status = "in_progress";
+      await tournament.save();
+    }
+
+    return {
+      ok: true,
+      tournamentId: String(match.tournamentId),
+      matchFinished: false,
+    };
+  }
 
   const winnerId =
     playerAScore > playerBScore ? match.playerAId : match.playerBId;
@@ -96,5 +136,9 @@ export async function advanceWinner(input: {
     await tournament.save();
   }
 
-  return { ok: true, tournamentId: String(match.tournamentId) };
+  return {
+    ok: true,
+    tournamentId: String(match.tournamentId),
+    matchFinished: true,
+  };
 }

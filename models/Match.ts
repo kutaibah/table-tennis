@@ -1,6 +1,7 @@
 import mongoose, { type InferSchemaType, type Model, Schema } from "mongoose";
 
-const MATCH_STATUSES = ["pending", "completed"] as const;
+/** `live` = partial per-game scores saved, match not decided yet. */
+const MATCH_STATUSES = ["pending", "live", "completed"] as const;
 
 const matchSchema = new Schema(
   {

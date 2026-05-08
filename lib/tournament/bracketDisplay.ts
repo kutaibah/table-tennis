@@ -11,7 +11,7 @@ export type BracketMatch = {
   /** Points per game (A vs B); omitted on older records. */
   gameScores?: GameScoreLine[] | null;
   winnerPlayerId?: string | null;
-  status: "pending" | "completed";
+  status: "pending" | "live" | "completed";
 };
 
 export type PlayerMap = Map<string, { name: string; nickname?: string }>;

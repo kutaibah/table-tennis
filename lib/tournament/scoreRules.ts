@@ -10,7 +10,9 @@ export function validateMatchScores(input: {
   const winMargin = Math.max(1, Math.floor(input.winMarginThreshold ?? 1));
 
   if (a === b) {
-    return "Scores cannot be equal.";
+    return bestOf === 1
+      ? "Scores cannot be equal."
+      : "Games won are tied; add the remaining game line(s) until one player reaches the match.";
   }
 
   if (bestOf === 1) {
@@ -25,7 +27,7 @@ export function validateMatchScores(input: {
   const lo = Math.min(a, b);
 
   if (hi !== gamesToWin || lo >= gamesToWin) {
-    return `For best-of-${bestOf}, enter games won: winner must have exactly ${gamesToWin} and the opponent fewer (e.g. ${gamesToWin}-0 … ${gamesToWin}-${gamesToWin - 1}).`;
+    return `For best-of-${bestOf}, your lines add up to ${a}–${b} games won (A–B). It must be exactly ${gamesToWin}–0, ${gamesToWin}–1, 1–${gamesToWin}, or 0–${gamesToWin}. If someone already had ${gamesToWin} wins, delete any later rows.`;
   }
 
   return null;
@@ -40,5 +42,5 @@ export function scoreEntryHint(bestOf: number, winMarginThreshold: number): stri
   }
 
   const gamesToWin = Math.ceil(best / 2);
-  return `One line per game, two numbers each (e.g. 11 7 / 8 11 / 12 10). Each line must be a valid game to 11 (win by 2). First to ${gamesToWin} games wins the match.`;
+  return `One row per game: points for A, then B (e.g. 11 and 7). Valid games to 11 (win by 2). You can save after each game — the match stays live until someone wins ${gamesToWin} games. Leave unused rows blank.`;
 }

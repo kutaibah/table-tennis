@@ -31,6 +31,9 @@ export default async function AdminTournamentDetailPage(props: {
     playerMap,
     totalRounds,
     championName,
+    formatByRound,
+    formatsSummary,
+    roundFormats,
   } = bundle;
 
   const status = tournament.status as TournamentStatus;
@@ -46,13 +49,6 @@ export default async function AdminTournamentDetailPage(props: {
       ? new Date(tournament.startDate).toISOString()
       : undefined;
 
-  const bestOf =
-    typeof tournament.bestOf === "number" ? tournament.bestOf : 1;
-  const winMarginThreshold =
-    typeof tournament.winMarginThreshold === "number"
-      ? tournament.winMarginThreshold
-      : 1;
-
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 space-y-10 px-4 py-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -63,17 +59,8 @@ export default async function AdminTournamentDetailPage(props: {
             </h1>
             <StatusBadge status={status} />
           </div>
-          <p className="text-muted-foreground text-sm">
-            {tournament.playerCount} players
-            {" · "}
-            {bestOf === 1 ? (
-              <>
-                Single-total scores · min lead {winMarginThreshold}
-              </>
-            ) : (
-              <>Best-of-{bestOf} (games won)</>
-            )}
-            {" · "}Admin
+          <p className="text-muted-foreground max-w-prose text-sm">
+            {tournament.playerCount} players · {formatsSummary} · Admin
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Button variant="outline" size="sm" asChild>
@@ -101,8 +88,8 @@ export default async function AdminTournamentDetailPage(props: {
             name={tournament.name}
             description={tournament.description ?? undefined}
             startDateIso={startIso}
-            bestOf={bestOf}
-            winMarginThreshold={winMarginThreshold}
+            playerCount={tournament.playerCount as number}
+            initialRoundFormats={roundFormats}
           />
         </section>
       ) : null}
@@ -117,6 +104,7 @@ export default async function AdminTournamentDetailPage(props: {
             playerCount={tournament.playerCount}
             currentCount={players.length}
             status={status}
+            playerNames={playerRows.map((p) => p.name)}
           />
         </div>
         <PlayerList tournamentId={id} players={playerRows} status={status} />
@@ -139,8 +127,7 @@ export default async function AdminTournamentDetailPage(props: {
           matches={bracketMatches}
           playerMap={playerMap}
           totalRounds={totalRounds}
-          bestOf={bestOf}
-          winMarginThreshold={winMarginThreshold}
+          formatByRound={formatByRound}
           showResultForms={
             status === "drawn" || status === "in_progress"
           }

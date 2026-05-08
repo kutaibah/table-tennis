@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 
 import { BracketView } from "@/components/tournament/BracketView";
 import { ChampionCard } from "@/components/tournament/ChampionCard";
+import { LiveGameFeed } from "@/components/tournament/LiveGameFeed";
 import { MatchesTable } from "@/components/tournament/MatchesTable";
 import { PublicPlayerRoster } from "@/components/tournament/PublicPlayerRoster";
+import { PublicTournamentLiveBoundary } from "@/components/tournament/public-tournament-live";
 import { StatusBadge } from "@/components/tournament/StatusBadge";
 import { dbConnect } from "@/lib/db";
 import { loadTournamentBundle } from "@/lib/tournament/load";
@@ -18,8 +20,14 @@ export default async function PublicTournamentPage(props: {
   const bundle = await loadTournamentBundle(id);
   if (!bundle) notFound();
 
-  const { tournament, players, bracketMatches, playerMap, totalRounds, championName } =
+  const { tournament, players, bracketMatches, playerMap, totalRounds, championName, liveFeed, formatByRound, formatsSummary } =
     bundle;
+
+  const livePollEnabled =
+    bracketMatches.length > 0 &&
+    (tournament.status === "drawn" ||
+      tournament.status === "in_progress" ||
+      tournament.status === "completed");
 
   const preDraw =
     tournament.status === "draft" || tournament.status === "players_added";
@@ -31,19 +39,13 @@ export default async function PublicTournamentPage(props: {
     seed: p.seed ?? undefined,
   }));
 
-  const bestOf =
-    typeof tournament.bestOf === "number" ? tournament.bestOf : 1;
-  const winMarginThreshold =
-    typeof tournament.winMarginThreshold === "number"
-      ? tournament.winMarginThreshold
-      : 1;
-
   const start =
     tournament.startDate != null
       ? new Date(tournament.startDate).toLocaleDateString()
       : null;
 
   return (
+    <PublicTournamentLiveBoundary enabled={livePollEnabled}>
     <div className="mx-auto w-full max-w-5xl flex-1 space-y-8 px-4 py-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
@@ -62,11 +64,7 @@ export default async function PublicTournamentPage(props: {
             {tournament.playerCount} players
             {start ? ` · Starts ${start}` : ""}
             {" · "}
-            {bestOf === 1 ? (
-              <>Scores: min lead {winMarginThreshold}</>
-            ) : (
-              <>Best-of-{bestOf}</>
-            )}
+            {formatsSummary}
           </p>
         </div>
         <Link
@@ -88,14 +86,17 @@ export default async function PublicTournamentPage(props: {
         />
       ) : null}
 
+      {bracketMatches.length > 0 ? (
+        <LiveGameFeed items={liveFeed} />
+      ) : null}
+
       <section className="space-y-4">
         <h2 className="text-lg font-medium">Bracket</h2>
         <BracketView
           matches={bracketMatches}
           playerMap={playerMap}
           totalRounds={totalRounds}
-          bestOf={bestOf}
-          winMarginThreshold={winMarginThreshold}
+          formatByRound={formatByRound}
         />
       </section>
 
@@ -110,5 +111,6 @@ export default async function PublicTournamentPage(props: {
         </section>
       ) : null}
     </div>
+    </PublicTournamentLiveBoundary>
   );
 }

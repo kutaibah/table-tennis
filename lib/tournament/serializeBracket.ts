@@ -12,7 +12,7 @@ export function toBracketMatches(
     playerBScore?: number | null;
     gameScores?: { a?: number; b?: number }[] | null;
     winnerPlayerId?: unknown;
-    status: "pending" | "completed";
+    status?: string;
   }[],
 ): BracketMatch[] {
   return docs.map((m) => ({
@@ -26,8 +26,15 @@ export function toBracketMatches(
     gameScores: normalizeGameScores(m.gameScores),
     winnerPlayerId:
       m.winnerPlayerId != null ? String(m.winnerPlayerId) : undefined,
-    status: m.status,
+    status: normalizeMatchStatus(m.status),
   }));
+}
+
+function normalizeMatchStatus(
+  s: string | undefined,
+): "pending" | "live" | "completed" {
+  if (s === "live" || s === "completed") return s;
+  return "pending";
 }
 
 function normalizeGameScores(

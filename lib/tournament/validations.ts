@@ -1,23 +1,6 @@
 import { z } from "zod";
 
-import {
-  BEST_OF_OPTIONS,
-  PLAYER_COUNTS,
-} from "@/lib/tournament/constants";
-
-const bestOfSchema = z.coerce
-  .number()
-  .refine(
-    (n): n is (typeof BEST_OF_OPTIONS)[number] =>
-      (BEST_OF_OPTIONS as readonly number[]).includes(n),
-    { message: "Match length must be 1, 3, 5, or 7 (games)." },
-  );
-
-const winMarginSchema = z.preprocess((v) => {
-  if (v === "" || v == null) return 1;
-  const n = Number(v);
-  return Number.isNaN(n) ? 1 : n;
-}, z.number().int().min(1).max(99));
+import { PLAYER_COUNTS } from "@/lib/tournament/constants";
 
 export const allowedPlayerCountSchema = z.coerce
   .number()
@@ -37,11 +20,10 @@ export const tournamentCreateSchema = z.object({
     z.string().max(2000).optional(),
   ),
   playerCount: allowedPlayerCountSchema,
-  bestOf: z.preprocess((v) => {
-    if (v === "" || v == null) return 1;
-    return Number(v);
-  }, bestOfSchema),
-  winMarginThreshold: winMarginSchema,
+  roundFormatsJson: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim() : ""),
+    z.string().min(2, "Configure match format for each round."),
+  ),
   startDate: z.preprocess(
     (v) => (v === "" || v == null ? undefined : v),
     z.string().optional(),
@@ -55,11 +37,10 @@ export const tournamentUpdateSchema = z.object({
     (v) => (v === "" || v == null ? undefined : v),
     z.string().max(2000).optional(),
   ),
-  bestOf: z.preprocess((v) => {
-    if (v === "" || v == null) return 1;
-    return Number(v);
-  }, bestOfSchema),
-  winMarginThreshold: winMarginSchema,
+  roundFormatsJson: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim() : ""),
+    z.string().min(2, "Round formats are required."),
+  ),
   startDate: z.preprocess(
     (v) => (v === "" || v == null ? undefined : v),
     z.string().optional(),
